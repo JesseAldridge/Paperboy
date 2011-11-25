@@ -1,0 +1,78 @@
+
+<!-- jquery, css.  Text area with default article text. -->
+<script src='http://ajax.googleapis.com/ajax/libs/jquery/1.5.0/jquery.min.js'></script>
+<script src="../static/jquery-fieldselection.js"></script>
+<style>
+  .btn {cursor:pointer; border:solid 1px; text-align:center;
+        display:inline; padding-left:3px; padding-right:3px}
+</style>
+<div width='1000px'>
+<h1>New article</h1>
+<textarea class='post_new_text' style="width:600px;height:400px">
+Title
+==========
+![image](http://image.jpg)
+
+Text
+
+[Full article](http://website.com)
+</textarea>
+
+<!-- Post button and text area.  Request file list.  -->
+<div class='post_new btn'>Post</div>
+<hr>
+<h1>E-mail</h1>
+<textarea class='mailing_list' style="width:300px;height:400px"></textarea>
+<textarea class='inbox' style="width:600px;height:400px"></textarea>
+<hr>
+<h1>Edit articles</h1>
+<textarea class='articles' style="width:300px;height:400px"></textarea>
+<textarea class='post_edit_text' style="width:600px;height:400px"></textarea>
+<div class='post_edit btn'>Post</div>
+</div>
+<script>
+g = {}
+$$.post("/articles",  function(data){ $$('.articles').val(data) })
+$$.post("/mailing_list",  function(data){ $$('.mailing_list').val(data) })
+$$.post("/inbox", function(data){
+  var str = (new XMLSerializer()).serializeToString(data);
+  $$('.inbox').val(str)
+})
+
+
+// Bind post buttons.
+var names = ['new', 'edit']
+for(var i = 0; i < names.length; i++) {
+  var name = 'post_' + names[i]
+  console.log('name: ', name, 'el:', $$('.' + name))
+  function bind(name) {
+    $$('.' + name).click(function() {
+      $$.post('/' + name, {
+        'text':$$('.' + name + '_text').val(), 'filename':g.filename,
+        },
+        function() {
+          $$('.' + name).before('Posted successfully.')
+        })
+    })
+  }
+  bind(name)
+}
+
+// Download article on click in list.
+$$('.articles').click(function() {
+  var lines = $$(this).val().split('\n')
+  var pos = $$(this).getSelection().start
+  var line_num = 0
+  for(line_i in lines) {
+    pos -= lines[line_i].length + 1
+    if(pos < 0)  break
+    line_num += 1
+  }
+  g.filename = lines[line_num]
+  $$.post("/download",  {"filename":g.filename},
+          function(data){
+            $$('.article_edit').val(data)
+            $$('.article_edit').show()
+          })
+})
+</script>
